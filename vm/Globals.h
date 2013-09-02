@@ -540,6 +540,11 @@ struct DvmGlobals {
     HashTable*  nativeLibs;
 
     /*
+     * (CraveOS) Non-system shared library table
+     */
+    HashTable* sharedLibraries;
+
+    /*
      * GC heap lock.  Functions like gcMalloc() acquire this before making
      * any changes to the heap.  It is held throughout garbage collection.
      */

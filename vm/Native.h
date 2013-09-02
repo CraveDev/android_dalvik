@@ -45,6 +45,9 @@ struct DalvikNativeClass {
 bool dvmNativeStartup(void);
 void dvmNativeShutdown(void);
 
+// CraveOS
+bool dvmUnloadNativeCode(const char* fileName, char** detail);
+void dvmUnloadSharedLibraries();
 
 /*
  * Convert argc/argv into a function call.  This is platform-specific.
