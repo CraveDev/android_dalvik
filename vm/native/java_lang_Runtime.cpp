@@ -128,41 +128,6 @@ static void Dalvik_java_lang_Runtime_freeMemory(const u4* args,
     RETURN_LONG(result);
 }
 
-/*
- * (CraveOS) Unload a library
- */
-static void Dalvik_java_lang_Runtime_nativeUnload(const u4* args, JValue* pResult)
-{
-    StringObject* fileNameObj = (StringObject*) args[0];
-    char* fileName = NULL;
-    StringObject* result = NULL;
-    char* reason = NULL;
-    bool success;
-
-    assert(fileNameObj != NULL);
-    fileName = dvmCreateCstrFromString(fileNameObj);
-
-    success = dvmUnloadNativeCode(fileName, &reason);
-    if (!success) {
-        const char* msg = (reason != NULL) ? reason : "unknown failure";
-        result = dvmCreateStringFromCstr(msg);
-        dvmReleaseTrackedAlloc((Object*) result, NULL);
-    }
-
-    free(reason);
-    free(fileName);
-    RETURN_PTR(result);
-}
-
-/*
- *
- */
-static void Dalvik_java_lang_Runtime_nativeUnloadSharedLibraries(const u4* args,
-    JValue* pResult)
-{
-    dvmUnloadSharedLibraries();
-}
-
 const DalvikNativeMethod dvm_java_lang_Runtime[] = {
     { "freeMemory",          "()J",
         Dalvik_java_lang_Runtime_freeMemory },
@@ -176,9 +141,5 @@ const DalvikNativeMethod dvm_java_lang_Runtime[] = {
         Dalvik_java_lang_Runtime_nativeLoad },
     { "totalMemory",          "()J",
         Dalvik_java_lang_Runtime_totalMemory },
-    { "nativeUnload",         "(Ljava/lang/String;)Ljava/lang/String;",
-        Dalvik_java_lang_Runtime_nativeUnload },
-    { "nativeUnloadSharedLibraries",         "()V",
-        Dalvik_java_lang_Runtime_nativeUnloadSharedLibraries },
     { NULL, NULL, NULL },
 };

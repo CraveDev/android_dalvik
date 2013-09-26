@@ -39,10 +39,6 @@ bool dvmNativeStartup()
     if (gDvm.nativeLibs == NULL)
         return false;
 
-    gDvm.sharedLibraries = dvmHashTableCreate(10, NULL);
-    if (gDvm.sharedLibraries == NULL)
-    	return false;
-
     return true;
 }
 
@@ -53,9 +49,6 @@ void dvmNativeShutdown()
 {
     dvmHashTableFree(gDvm.nativeLibs);
     gDvm.nativeLibs = NULL;
-
-    dvmHashTableFree(gDvm.sharedLibraries);
-    gDvm.sharedLibraries = NULL;
 }
 
 
@@ -176,15 +169,6 @@ static int hashcmpNameStr(const void* ventry, const void* vname)
     const char* name = (const char*) vname;
 
     return strcmp(pLib->pathName, name);
-}
-
-// (CraveOS)
-static int hashcmpString(const void* ventry, const void* vnewEntry)
-{
-    const char* s1 = (const char*) ventry;
-    const char* s2 = (const char*) vnewEntry;
-
-    return strcmp(s1, s2);
 }
 
 /*
@@ -315,46 +299,6 @@ static bool checkOnLoadResult(SharedLib* pEntry)
 typedef int (*OnLoadFunc)(JavaVM*, void*);
 
 /*
- * (CraveOS) Unload native code
- */
-bool dvmUnloadNativeCode(const char* pathName, char** detail) {
-	SharedLib* pEntry;
-
-	ALOGD("Trying to unload lib %s\n", pathName);
-
-	pEntry = findSharedLibEntry(pathName);
-	if (pEntry != NULL) {
-		u4 hash = dvmComputeUtf8Hash(pathName);
-		if (dvmHashTableRemove(gDvm.nativeLibs, hash, pEntry)) {
-			//dlclose(pEntry->handle);
-			free(pEntry->pathName);
-			free(pEntry);
-			ALOGD("Shared lib '%s' has been freed and removed.\n", pathName);
-			return true;
-		}
-
-		ALOGD("Shared lib '%s' could not be removed.\n", pathName);
-		return false;
-	}
-
-	ALOGD("Shared lib '%s' could not be found.\n", pathName);
-	return false;
-}
-
-static int unloadSharedLibrary(void* vpath, void* vmethod) {
-	const char* path = (const char*) vpath;
-	dvmUnloadNativeCode(path, NULL);
-	return 0;
-}
-
-void dvmUnloadSharedLibraries() {
-	ALOGD("Unloading shared libraries.\n");
-
-	dvmHashForeach(gDvm.sharedLibraries, unloadSharedLibrary, (void*) NULL);
-	dvmHashTableClear(gDvm.sharedLibraries);
-}
-
-/*
  * Load native code from the specified absolute pathname.  Per the spec,
  * if we've already loaded a library with the specified pathname, we
  * return without doing anything.
@@ -466,10 +410,6 @@ bool dvmLoadNativeCode(const char* pathName, Object* classLoader,
     } else {
         if (verbose)
             ALOGD("Added shared lib %s %p", pathName, classLoader);
-
-        //(CraveOS) Add to non-system shared lib collection
-        u4 libhash = dvmComputeUtf8Hash(pathName);
-        dvmHashTableLookup(gDvm.sharedLibraries, libhash, strdup(pathName), hashcmpString, true);
 
         bool result = true;
         void* vonLoad;
